@@ -1,0 +1,1654 @@
+# Affichage de texte en hologramme, avec possibilité de bouton, etc.
+# => affichage holo avancé et interractif
+# Projet commencé le 29 Avril 2017 (ça fait longtemps)
+
+# /!\/!\/!\/!\/!\/!\/!\/!\/!\/!\ ATTENTION /!\/!\/!\/!\/!\/!\/!\/!\/!\/!\
+# Ce skript a été développé en version 1.10 de minecraft, avec spigot 1.10
+# Ce skript n'a été testé QUE en version 1.9 et 1.10 de minecraft, il peut peut-être y avoir des problèmes en 1.8 et 1.11+, mais normalement c'est bon
+# Je précise tout ceci car le skript provoque le spawn d'Armor Stand, dont la manière de fonctionner et l'id ont beaucoup changé au cours de l'évolution de minecraft
+# -> Si vous avez un réel soucis, contactez moi en privé :
+#    - discord: @blueblasterz#0552
+#    - skript-mc: https://skript-mc.fr/forum/conversations/add?to=blueblasterz
+# Nécéssite Skript, ..
+# Les versions utilisées pendant le développement sont les versions les plus récentes de skripttools.net
+#
+# by blueblasterz
+
+# /!\ POUR UTILISER UN SCREEN, IL FAUT PASSER SON FOV AU MEME QUE CELUI UTILISE PDT SA CREATION
+# pour les exemples déjà donnés, et globalement pour mes scripts, le fov doit être au max, càd quake pro
+# plus le fov est grand, plus il y a de place
+
+options:
+	McVersion: 10 # ne mettez que la première sous-version. par exemple: 1.9.4 -> 9 // 1.8 -> 8 // 1.11.2 -> 11 etc
+	# Notez que comme dit plus haut, Il n'est absolument pas sur qu'une autre version que 1.10.X fonctionne Ceci a juste pour but d'ESSAYER de faire fonctionner le skript, sans AUCUNE SURETÉ
+	
+	permission: * # par défaut * = op. La permission pour faire les taches op (création de screen,...)
+	
+	cmdJoinScreen: joinScreen # la commande pour que skript considère que vous êtes sur un écran
+	aliasesJS: joins, jscreen, joinscr, jsc # les aliases de la commande joinScreen
+	
+	cmdQuitScreen: quitScreen # pour sortir de devant un écran (sinon vous ne pouvez pas bouger :o)
+	aliasesQS: quits, qscreen, quitscr, qsc # les aliases de la commande  quitScreen
+	cmdReloadScreen: reloadScreen # pour recharger un écran sans avoir à le quitter (utile pour faire des tests, ou si buggé)
+	aliasesRS: rlscreen, rsc # les aliases de la commande  reloadScreen
+	cmdLoadScreen: loadScreen # pour charger un screen via une commande, et non via un bouton
+	aliasesLS: lscreen, lsc # les aliases de la commande  loadScreen
+	
+	# note : la commande /fqsc est disponible pour pouvoir bouger sans faire disparaitre l'écran, pour voir par exemple le rendu vu de dehors de votre screen
+	#        la commande /fjsc vous permettra de rejoindre le screen sur lequel vous étiez auparavant. /!\ N'utilisez pas cette commande si : - vous êtes déjà sur un screen
+	#																																	      - vous n'avez pas utilisé auparavant la commande /fqcs (vous ne pourriez plus du tout bouger :o)
+	
+	refreshCurseur: 0.05 # temps de refresh du curseur en secondes. Par défaut 0.05 -> 1 tick de jeu, le minimum possible il me semble, à tester (mettre moins serai très laggy)
+
+	logo: &6&l[&aSkreen&6&l]&b
+	
+	path: plugins/Skript/scripts/-screen/ # modifiable, chemin par défaut : scripts/-screen/
+		     								  # représente le dossier dans lequel sont stockés les différents screens, ainsi que la config si UN JOUR il y a une config
+	# sensibiliteCurseur: 5 # représente la sensibilité du déplacement du curseur
+	                      # par défaut, 5. Si vous voulez voir ce que cela représente, allez voir la partie "every {@refreshCurseur} seconds:"
+	                      # pas encore implémenté
+	
+	sensibiliteMolette: 0.05 # pour la modification de la taille du texte, lors de la création d'un écran
+	
+	charRepConsole: &r &e> &r # le caractère qui précèdera toutes les réponses de la "console" (= de l'écran, exemple: lors de la crétaion d'un nvel écran)
+	
+	screenBvn: mainScreen  # ces 2 écrans sont trouvable sur le forum
+	screenAccueil: accueil
+	
+	nbreErreursParPage: 5 # le nombre d'erreur affichés dans une tooltip, s'il y a des erreurs
+	
+	
+	section: &8|nqdije2828f4sd65qd98e22zq|&r # des caractères random, qui servent en interne pour séparer des infos
+	                                         # si PAR HASARD en créant un screen, il DOIT contenir exactement cette chaine,
+									         # modifiez la. Sinon, il n'y a pas de raison d'y toucher
+	
+	charFin: &8[srdtfvygbh]&r # encore des caracteres random...
+	
+	sectionCancel: &8|zblalbloueoifd5540CANCEL|&r # et encore... (désolé)
+	
+	#--- ne pas modifier, risque de non fonctionnement du skript et/ou d'apparition d'armor stand buggés diffciles à faire disparaitre
+	version: 1.0
+
+	idAS9: ArmorStand
+	idAS11: armor_stand
+	dataCurseur: {CustomName:""§CURSEURaer782d564qsf8"",Invisible:1b,Tags:[""curseur"",""PLAYER""],NoGravity:1b,ShowArms:1b,Small:1b,ArmorItems:[{},{},{},{}],HandItems:[{id:""chorus_plant"",Count:1b},{id:""chorus_plant"",Count:1b}],Pose:{LeftArm:[90f,-90f,-38f],RightArm:[90f,90f,38f]}}
+	dataCurseur8: {CustomName:""§CURSEURaer782d564qsf8"",Invisible:1b,Tags:[""curseur"",""PLAYER""],NoGravity:1b,ShowArms:1b,Small:1b,ArmorItems:[{},{},{},{}],HandItems:[{id:""lever"",Count:1b},{id:""lever"",Count:1b}],Pose:{LeftArm:[90f,-90f,-38f],RightArm:[90f,90f,38f]}}
+	dataNewCurseur: {Invisible:1b,Tags:[""curseur"",""TAGNEWCURSEUR"",""PLAYER""],NoGravity:1b,ShowArms:1b,Small:0b,ArmorItems:[{},{},{},{}],HandItems:[{id:""ITEMTOADD"",Count:1b,Damage:DATA},{id:""wool"",Count:1b,Damage:DATA}],Pose:{LeftArm:[90f,-90f,-38f],RightArm:[90f,90f,38f]}}
+	dataText: Invisible:1,NoGravity:1,CustomNameVisible:1b
+	dataTextEDITOR: Invisible:1,NoGravity:1,CustomNameVisible:1b,Tags:[""InEditorInEditor"",""PLAYER"",""IDNEWTEXT""]
+	radiusX: 4
+	radiusY: 3
+	radiusZ: 2
+	#-------------------
+
+# ne pas toucher les Aliases, sinon tout est cassé
+Aliases: # simplement pour être sûr que même si vous avez des aliases modifiés ça fonctionne
+	brown mushroom = 39
+	light blue wool = 35:3
+	black wool = 35:15
+	black carpet = 171:15
+	
+	repeater_west = 93:3
+	repeater_east = 93:1
+	
+	torch_on_sol = 76:5
+	torch_off_sol = 75:5
+	
+	torch_on_mur_west = 76:1
+	torch_off_mur_west = 75:1
+	
+	torch_off_mur_east = 75:2
+	torch_on_mur_east = 76:2
+	
+	unlit_redstone_lamp = 123:0
+	redstone_powder = 55:0
+	lever = 69:5
+	stone_pressure_plate = 70:0
+	barrier = 166:0
+#-------------------	
+
+	
+# A partir d'ici, les commentaires risquent d'être moins compréhensibles, et plus en rapport avec le fonctionnement interne du skript.
+# la majorité des commentaires sont en fait des lignes de débug désactivés, que vous pouvez réactiver si besoin, si vous avez un soucis
+# ou alors c'est des anciens codes, par exemple j'ai gardé tout mes execute console command, pour me souvenir de combien j'ai galéré x)
+
+on script load:
+	if file "{@path}" does not exist:
+		wait 2 ticks
+		create dir "{@path}"
+		
+	
+on quit:
+	if {screen.%player's uuid%.onScreen} is true:
+		make player execute command "/qsc"
+	
+	
+	
+	
+function decouper(t: text , s: number , end: text) :: text: 
+	set {_split::*} to {_t} split by ""
+	
+	set {_formatSave::*} to "" and ""
+	set {_countLetters} to 0 # compte les lettres, et pas les formatages (§a,§b,..)
+	
+	set {_noFormatName::1} to "" # éviter un "none" plus tard
+	set {_nextFormat} to 0
+	set {_STOP} to 0
+	set {_absoluteCount} to 0
+	
+	loop {_split::*}:
+		add 1 to {_countLetters}
+		add 1 to {_absoluteCount}
+		if loop-value is "§":
+			set {_nextFormat} to 1
+			set {_STOP} to 1
+		
+		if {_STOP} is 1:
+			set {_STOP} to 0
+			
+		else:
+			if {_nextFormat} is 1:
+				set {_nextFormat} to 0
+				remove 2 from {_countLetters}
+				set {_formatSave::%{_absoluteCount}%} to "%{_countLetters} + 1%||%loop-value%"
+			else:
+				set {_noFormatName::%{_countLetters}%} to loop-value
+	
+	set {_finalName} to ""
+	set {_nextAddFormat} to 0
+	set {_toBeAdded} to ""
+	set {_STOP} to 0
+	set {_endWhile} to size of {_noFormatName::*}
+	set {_whileCount} to 0
+	set {_whileVerif} to 0
+	while {_whileCount} is smaller than {_endWhile}:
+		loop {_formatSave::*}:
+			set {_temp::*} to (loop-value) split by "||"
+			if "%{_temp::1}%" is equal to "%{_whileCount} + 1%":
+				set {_toBeAdded} to "%{_temp::2}%"
+				delete {_formatSave::%loop-index%}
+				set {_STOP} to 1
+				set {_finalName} to "%{_finalName}%§%{_toBeAdded}%"
+				set {_nextAddFormat} to 0
+				exit 2 sections
+		if {_STOP} is 1:
+			set {_STOP} to 0
+		else:
+			add 1 to {_whileCount}
+			set {_newLetter} to {_noFormatName::%{_whileCount}%}
+			set {_finalName} to "%{_finalName}%%{_newLetter}%"
+		
+		if {_whileCount} is greater than {_s}:
+			set {_whileCount} to {_endWhile} +1
+			set {_finalName} to "%{_finalName}%%{_end}%"
+			
+		# wait 1 tick
+		add 1 to {_whileVerif}
+		if {_whileVerif} is greater than 100:
+			set {_whileCount} to -1
+	return {_finalName}
+
+function setLigneOfBlock(pos1: location , length: integer , dir: direction , block: item):
+	# utilisée pour la construction du batiment pour voir les screens
+	set {_pos2} to {_pos1}
+	loop {_length} times:
+		set block at {_pos2} to {_block}
+		set {_pos2} to location of block {_dir} block at {_pos2}
+		wait 3 ticks
+
+		
+function containsP(c:players, t:player) :: boolean:
+	# broadcast "c : %{_c::*}% %nl% t : %{_t}%"
+	loop {_c::*}:
+		if loop-value is {_t}:
+			return true
+	
+	return false
+	
+function containsLoc(c:locations, t:location) :: boolean:
+	# broadcast "c : %{_c::*}% %nl% t : %{_t}%"
+	loop {_c::*}:
+		if loop-value is {_t}:
+			return true
+	
+	return false
+
+	
+function checkChar(name:text) :: number: # fonction de Angelus 
+	#Vérification qu'il n'y ait pas de caractère spécial ni de majuscules
+	replace all "0" with "" in {_name} # méthode galériene rajoutée par moi (blue), pour éviter un faux positif avec les chiffres
+	replace all "1" with "" in {_name} # comme je maitrise pas vrmt le regex... :(
+	replace all "2" with "" in {_name}
+	replace all "3" with "" in {_name}
+	replace all "4" with "" in {_name}
+	replace all "5" with "" in {_name}
+	replace all "6" with "" in {_name}
+	replace all "7" with "" in {_name}
+	replace all "8" with "" in {_name}
+	replace all "9" with "" in {_name}
+	set {_groups::*} to groups 1 of {_name} matched to "([""''!@##$^&*()+-=:/\&~`|%%éèàê€ïìîäàâüùûçöô])"
+	# broadcast "%{_groups::*}%"
+	set {_size} to 0
+	loop {_groups::*}:
+		add 1 to {_size}
+	# broadcast "%{_size}%"
+	if {_size} >= 1:
+		set {_TempT} to 0
+	else:
+		set {_TempT} to 1
+	return {_TempT}
+	
+function trunc(x: number, d: integer) :: number:
+	broadcast "x: %{_x}%, d: %{_d}%"
+	set {_t} to "%{_x}%"
+	if {_t} contains ".":
+		set {_split::*} to {_t} split by "."
+		broadcast "%{_split::*}%"
+		set {_int} to {_split::1}
+		set {_decimals} to first {_d} characters of {_split::2}
+	else:
+		set {_int} to {_x}
+		set {_decimals} to 0
+	return "%{_int}%.%{_decimals}%" parsed as number
+	
+	
+function verifScreen(p: player) :: number: # voir si la vérif est : vérif de tous les blocs autour du joueur, OU vérif que le joueur est bien à une pos définie au préalable OU rien du tout
+	set {_loc} to location of block at {_p}
+	if containsLoc({screen.locations::*} , {_loc}) is true:
+		return 1
+	else:
+		return 0
+
+	
+	
+function loadScreen(p: player , name: text):
+	# broadcast "fonction lancée loadScreen: p : %{_p}% , name : %{_name}%"
+	set {_uuid} to uuid of {_p}
+	set {_path} to "{@path}%{_name}%.txt"
+	if file {_path} does not exist:
+		send "{@logo} &4&lErreur :&4 Le fichier %{_path}% n'existe pas, veuillez charger un autre screen" to {_p}
+		stop
+	set {_nbLine} to line count of file {_path}
+	set {_globalTag} to line 1 in file {_path} # la 1ere ligne est toujours le tag qui sera attribué à tout les armors stands du screen, utile pour le changement de screen
+	replace all " " and "," and """" and ":" and ";" and "!" with "_" in {_globalTag} # sinon il y aura un bug lors du déchargement de l'écran. globalement, pour être sur d'éviter un bug, n'utilisez que des lettres, pas d'espaces, charactères spéciaux, voire pas de chiffre pour être sur
+	
+	# broadcast "path : %{_path}%"
+	# broadcast "nbLine : %{_nbLine}%"
+	# broadcast "nbArmorStand : %{_nbArmorStand}%"
+	# broadcast "globalTag : %{_globalTag}%"
+	
+	set {_line} to 2 # on part de la 2eme ligne, la première représentant toujours la même chose
+	
+	set {_verifNbArmorStand} to 0
+	set {_nbCurseur} to 0
+	set {_tagCurseur::*} to ""
+
+# TYPES DISPONIBLES:
+# TEXT
+# BUTTON
+# FOND
+#
+	set {_erreurs} to ""
+	set {_nbreErreurs} to 0
+	
+	loop {_nbLine}-1 times: # traitement des lignes
+		set {_raw} to line "%{_line}%" parsed as number in file {_path} # la ligne, sous forme brute
+		# set {_raw} to file {_path}'s line {_line}
+		if first character of {_raw} is not "##": # si ça n'est pas un commentaire
+			set {_data::*} to {_raw} split by "||" # on coupe la ligne
+			set {_type} to {_data::1} # et on clarifie tout les éléments. c'est moins opti, mais beaucoup plus lisible
+			set {_tag} to {_data::2} # ce tag sert à regrouper, par exemple, 5 armor stands les un au dessus des autres, formant un texte. Utile si on décide de supprimer seulement une partie du screen à un moment donné
+			replace all " " and "," and """" and ":" and ";" and "!" with "_" in {_tag}
+			if {_type} is "text":
+				set {_relPos} to {_data::3}
+				# set {_text} to {_data::4}
+				# replace all "%%player%%" with "%{_p}%" in {_text}
+				# replace all "&" with "§" in {_text}
+				replace all "%%player%%" with "%{_p}%" in {_data::4}
+				set {_text} to "%colored {_data::4}%"
+				# evaluate "set {_text} to ""%{_text}%"""
+				# evaluate "set {_text} to ""%{_text}%"""
+				
+				set {_ASCount} to {_data::5}
+				set {_splitPos::*} to {_relPos} split by "/"
+				# set {_command} to "execute %{_p}% ~ ~ ~ summon ArmorStand ~%{_splitPos::1}% ~%{_splitPos::2}% ~%{_splitPos::3}% {Tags:[""%{_globalTag}%"",""%{_tag}%""],CustomName:""%{_text}%"",{@dataText}}"
+				
+				# broadcast "%{_splitPos::*}%"
+				set {_locOfText} to location at x-pos of {_p} + {_splitPos::1} parsed as number , y-pos of {_p} + {_splitPos::2} parsed as number , z-pos of {_p} + {_splitPos::3} parsed as number in {_p}'s world
+				set {_nbtOfText} to "{Tags:[""%{_globalTag}%"",""%{_tag}%""],CustomName:""%{_text}%"",{@dataText}}"
+				
+				loop {_ASCount} parsed as number times:
+					spawn 1 armor stand at {_locOfText}
+					add {_nbtOfText} to nbt of last spawned entity
+					add 1 to {_NbArmorStand}
+					
+			else if {_type} is "button":
+				# broadcast "nveau bouton"
+				set {_LorR} to {_data::3}
+				set {_xmin} to {_data::4}
+				set {_ymin} to {_data::5}
+				set {_xmax} to {_data::6}
+				set {_ymax} to {_data::7}
+				set {_triggerType} to {_data::8}
+				replace all "%%player%%" with "%{_p}%" in {_data::9}
+				set {_argTrigger::*} to {_data::9} split by "[|]"
+				
+				# set {screen.%{_uuid}%.activeScreen.buttons::*} to "" and ""
+				
+				# broadcast "bton no %{screen.%{_uuid}%.activeScreen.buttons::count}%"
+				set {screen.%{_uuid}%.activeScreen.buttons::count} to {screen.%{_uuid}%.activeScreen.buttons::count} +1
+				# broadcast "bton no %{screen.%{_uuid}%.activeScreen.buttons::count}%"
+				
+				set {_button} to "%{_LorR}%||%{_xmin}%||%{_ymin}%||%{_xmax}%||%{_ymax}%||%{_triggerType}%||%{_data::9}%"
+				set {_buttonNb} to {screen.%{_uuid}%.activeScreen.buttons::count}
+				set {screen.%{_uuid}%.activeScreen.buttons::%{_buttonNb}%} to {_button}
+				
+			else if {_type} is "fond":
+				# broadcast "%{_lineFond}%"
+				set {_x} to 4
+				set {_z} to 3
+				if {_tag} parsed as number is set:
+					set {_lineFond} to {_data::3}
+					set {_y} to {_tag} parsed as number -3
+					set {_dataLine::*} to {_lineFond} split by "/"
+					if {_tag} parsed as number >= 8:
+						# send "{@charRepConsole}&4Erreur : &4&oValeur non valide : &c%{_tag}%" to {_p}
+						# send "&c&o(l.%{_line}% : ""%{_raw}%&c&o"")" to {_p}
+						add 1 to {_nbreErreurs}
+						set {_erreurs} to "%{_erreurs}%%nl%&e%unicode ""\u27a4"" as text%&r &4Valeur non valide : &c%decouper({_tag}, 37, ""..."")%%nl%&c&o(l.%{_line}% : ""%decouper({_raw}, 52, ""..."")%&c&o"")%nl%"
+					else:
+						loop {_dataLine::*}:
+							# broadcast """%loop-value-2%"""
+							if "%loop-value-2%" is not "-" or "--" or "":
+								# broadcast """%loop-value-2%"" is not ""-"" or ""--"" or """""
+								set block at (location at x-pos of {_p} + {_x} , y-pos of {_p} + {_y} , z-pos of {_p} + {_z} in {_p}'s world) to "35:%loop-value-2%" parsed as item
+								# broadcast "%block at location at x-pos of {_p} + {_x} , y-pos of {_p} + {_y} , z-pos of {_p} + {_z} in {_p}'s world%"
+								# set {_item} to "35:%loop-value-2%" parsed as item
+								# broadcast "%{_item}% : 35:%loop-value-2%"
+							set {_x} to {_x} -1
+				else if {_tag} is "full" or "all":
+					set {_y} to 4
+					loop 7 times:
+						loop 9 times:
+							set block at (location at x-pos of {_p} + {_x} , y-pos of {_p} + {_y} , z-pos of {_p} + {_z} in {_p}'s world) to "35:%{_data::3}%" parsed as item
+							set {_x} to {_x} -1
+						set {_y} to {_y} -1
+						set {_x} to 4
+				else if {_tag} is "load":
+					set {_nameF} to "{@path}%{_data::3}%.txt"
+					if file {_nameF} does not exist:
+						# send "{@charRepConsole}&4Erreur :&4&o Le fichier %{_data::3}%.txt n'existe pas" to {_p}
+						# send "&c&o(%{_name}%.txt, ligne n°%loop-value +1%&c&o)" to {_p}
+						add 1 to {_nbreErreurs}
+						set {_erreurs} to "%{_erreurs}%%nl%&e%unicode ""\u27a4"" as text%&r &4Le fichier &c%decouper({_data::3}, 37, ""..."")%.txt&4 n'existe pas%nl%&c&o(l.%{_line}% : ""%decouper({_raw}, 52, ""..."")%&c&o"")%nl%"
+					else if line 1 in file {_nameF} is not "FOND":
+						# send "{@charRepConsole}&4Erreur :&4&o Le fichier %{_data::3}%.txt n'est pas reconnu comme un fond" to {_p}
+						# send "&c&o(%{_name}%.txt, ligne n°%loop-value +1%&c&o)" to {_p}
+						add 1 to {_nbreErreurs}
+						set {_erreurs} to "%{_erreurs}%%nl%&e%unicode ""\u27a4"" as text%&r &4Le fichier &c%decouper({_data::3}, 37, ""..."")%.txt&4 n'est pas reconnu comme un fond%nl%&c&o(l.%{_line}% : ""%decouper({_raw}, 52, ""..."")%&c&o"")%nl%"
+						
+					else: # obligé de passer par else, car si on avait mis un "stop trigger" juste avant, cela aurai arrêté la fonction même s'il restait des infos valides après. En fait on continue et on passe juste les lignes fautives
+						# send "tralala" to {_p}
+						set {_nbreLigne} to line count of file {_nameF}
+						# broadcast "%{_nbreLigne}%"
+						loop {_nbreLigne} times:
+							set {_raw2} to line "%loop-value-2%" parsed as number in file {_nameF} # la ligne, sous forme brute
+							if first character of {_raw2} is not "##": # si ça n'est pas un commentaire
+								set {_data2::*} to {_raw2} split by "||"
+								if {_data2::1} is "fond":
+									set {_x2} to 4
+									set {_z2} to 3
+									if {_data2::2} parsed as number is set:
+										set {_lineFond} to {_data2::3}
+										set {_y2} to {_data2::2} parsed as number -3
+										set {_dataLine::*} to {_lineFond} split by "/"
+										loop {_dataLine::*}:
+											# broadcast "%loop-value-3%"
+											if "%loop-value-3%" is not "-" or "--" or "":
+												# broadcast """%loop-value-3%"" is not ""-"" or ""--"" or """""
+												set block at (location at x-pos of {_p} + {_x2} , y-pos of {_p} + {_y2} , z-pos of {_p} + {_z2} in {_p}'s world) to "35:%loop-value-3%" parsed as item
+												# broadcast "%block at location at x-pos of {_p} + {_x2} , y-pos of {_p} + {_y2} , z-pos of {_p} + {_z2} in {_p}'s world%"
+												# set {_item} to "35:%loop-value-2%" parsed as item
+												# broadcast "%{_item}% : 35:%loop-value-2%"
+											set {_x2} to {_x2} -1
+									else if {_tag} is "full" or "all":
+										set {_y2} to 4
+										loop 7 times:
+											loop 9 times:
+												set block at (location at x-pos of {_p} + {_x2} , y-pos of {_p} + {_y2} , z-pos of {_p} + {_z2} in {_p}'s world) to "35:%{_data2::3}%" parsed as item
+												set {_x2} to {_x2} -1
+											set {_y2} to {_y2} -1
+											set {_x2} to 4
+									else if {_tag} is "load":
+										if {_rappelSurFichierFond} is not 1:
+											set {_rappelSurFichierFond} to 1
+											# send "{@charRepConsole}&4&oRappel :&7&o Dans un fichier de fonc, toutes les instructions autres que des fonds sont ignorés. Les instructions ""load"" pour fond sont aussi ignorées" to {_p}
+										
+								else if {_rappelSurFichierFond} is not 1:
+									set {_rappelSurFichierFond} to 1
+									# send "{@charRepConsole}&4&oRappel :&7&o Dans un fichier de fonc, toutes les instructions autres que des fonds sont ignorés. Les instructions ""load"" pour fond sont aussi ignorées" to {_p}
+						
+
+			else:
+				# send "{@charRepConsole}&4Erreur : &4&lArgument non reconnu : &c%{_type}%" to {_p}
+				# send "&c&o(l.%{_line}% : ""%{_raw}%&c&o"")" to {_p}
+				add 1 to {_nbreErreurs}
+				set {_erreurs} to "%{_erreurs}%%nl%&e%unicode ""\u27a4"" as text%&r &4Argument non reconnu : &c%decouper({_type}, 37, ""..."")%%nl%&c&o(l.%{_line}% : ""%decouper({_raw}, 52, ""..."")%&c&o"")%nl%"
+		add 1 to {_line}
+	if {_nbreErreurs} > 0:
+		if {_nbreErreurs} <= {@nbreErreursParPage}: #>
+			if {_erreurs} contains "<" or ">":
+				replace all "<" and ">" with "_" in {_erreurs}
+				set {_erreurs} to "%{_erreurs}%%nl%%nl%&8&oles < et > sont remplacés par _%nl%&8&opour éviter un bug d'affichage"
+			if {_nbreErreurs} = 1:
+				set {_erreurs} to "&4&l Erreur (&cNBREERREURS852462846846154235768524&4&l)%{_erreurs}%"
+				replace all "NBREERREURS852462846846154235768524" with "%{_nbreErreurs}%" in {_erreurs}
+				send "<tooltip:%{_erreurs}%>&c&l%{_nbreErreurs}%&4 Erreur lors du chargement de %{_name}%.txt<reset>" to {_p}
+			else:
+				set {_erreurs} to "&4&l Erreurs (&cNBREERREURS852462846846154235768524&4&l)%{_erreurs}%"
+				replace all "NBREERREURS852462846846154235768524" with "%{_nbreErreurs}%" in {_erreurs}
+				send "<tooltip:%{_erreurs}%>&c&l%{_nbreErreurs}%&4 Erreurs lors du chargement de %{_name}%.txt<reset>" to {_p}
+		else:
+			set {_nbreTooltips} to ceil({_nbreErreurs}/{@nbreErreursParPage})
+			set {_splitErreur::*} to {_erreurs} split by "%nl%"
+			set {_i} to 1
+			send "&c&l%{_nbreErreurs}%&4 Erreurs lors du chargement de %{_name}%.txt" to {_p}
+			loop {_nbreTooltips} times:
+				if loop-value is 1:
+					set {_thisTooltip} to "&4&lErreurs (&c1-{@nbreErreursParPage} /%{_nbreErreurs}%&4&l)"
+				else if loop-value is {_nbreTooltips}:
+					set {_thisTooltip} to "&4&lErreurs (&c%((loop-value) -1)*{@nbreErreursParPage} +1%-%{_nbreErreurs}% /%{_nbreErreurs}%&4&l)"
+				else:
+					set {_thisTooltip} to "&4&lErreurs (&c%((loop-value) -1)*{@nbreErreursParPage} +1%-%(loop-value)*{@nbreErreursParPage}% /%{_nbreErreurs}%&4&l)"
+				loop {@nbreErreursParPage} times:
+					loop 3 times:
+						add 1 to {_i}
+						if {_splitErreur::%{_i}%} is set:
+							set {_thisTooltip} to "%{_thisTooltip}%%nl%%{_splitErreur::%{_i}%}%"
+						else:
+							exit 2 loops
+				if {_thisTooltip} contains "<" or ">":
+					replace all "<" and ">" with "_" in {_thisTooltip}
+					set {_thisTooltip} to "%{_thisTooltip}%%nl%%nl%&8&oles < et > sont remplacés par _%nl%&8&opour éviter un bug d'affichage"
+				send "<tooltip:%{_thisTooltip}%>&cPage %loop-value-1%<reset>" to {_p}
+			
+	send "&6%{_name}%&a chargé !" to {_p}
+	remove {screen.%{_uuid}%.activeScreen.buttons::count} from {screen.%{_uuid}%.activeScreen.buttons::*}
+	set {screen.%{_uuid}%.activeScreen::globalTag} to "%{_globalTag}%"
+	set {screen.%{_uuid}%.activeScreen::name} to {_name}
+	set {screen.%{_uuid}%.activeScreen::nbArmorStand} to "%{_nbArmorStand}%"
+	set {screen.%{_uuid}%.activeScreen::nbCurseur} to 1
+	
+	# format des boutons: button||tag||LEFT/RIGHT||xmin||ymin||xmax||ymax||triggerType||argTrigger
+	# avec triggerType: command/effect/screenEffect
+	# si plusieurs commandes/effect/screenEffect, séparez les via cette chaine de charactères: "[|]", sans guillemets
+	# exemples avec 3 commandes: command||give %{_p}% diamond 5[|]give %{_p}% cooked_porkshop 15[|]tp %{_p}% 0 64 0
+	# exemples avec 3 effets: effect||give 5 diamonds to {_p}[|]give 15 of cooked porkshop to {_p}[|]telport {_p} to location at 0 , 64 , 0 in world of {_p}
+	# les effects sont exécutés via des evaluate (ce sont des effets skript)
+	# les commandes sont exécutés via des execute console command (ce sont des commandes minecraft)
+	# go forum pour plus d'infos
+
+	
+function unloadScreen(p: player, toQuit: boolean = false):
+	set {_uuid} to uuid of {_p}
+	set {_tag} to {screen.%{_uuid}%.activeScreen::globalTag}
+	set {_count} to {screen.%{_uuid}%.activeScreen::nbArmorStand}
+	set {_name} to {screen.%{_uuid}%.activeScreen::name}
+	
+	
+	# execute console command "execute %{_p}% ~ ~ ~ /kill @e[type=ArmorStand,tag=%{_tag}%,c=%{_count}%]"
+	loop all entities in radius {@radiusX} , {@radiusY} , {@radiusZ} around location at x-pos of {_p}, y-pos of {_p} + 1 , z-pos of {_p} +1 in {_p}'s world:
+		# broadcast "%loop-value%"
+		if loop-entity is armor stand:
+			if "%name of loop-entity%" is "§CURSEURaer782d564qsf8" or "CLICKa87fez1428eds":
+				if {_toQuit} is true:
+					delete loop-entity
+			else:
+				delete loop-entity
+	delete {screen.%{_uuid}%.activeScreen::*}
+	delete {screen.%{_uuid}%.activeScreen.buttons::*}
+	delete {screen.%{_uuid}%.activeScreen.buttons::count}
+	delete {screen.%{_uuid}%.activeScreen::nbCurseur}
+	loop blocks within (location at x-pos of {_p} +4 , y-pos of {_p} +4 , z-pos of {_p} +3 in {_p}'s world) to (location at x-pos of {_p} -4 , y-pos of {_p} -3 , z-pos of {_p} + 3 in {_p}'s world):
+		set loop-block to "35:15" parsed as item
+
+
+		
+		
+command {@cmdJoinScreen}:
+	executable by: players
+	aliases: joins, jscreen, joinscr, jsc
+	trigger:
+		if containsP({screen.playersOnScreen::*} , player) is true:
+			message "{@logo} &4Erreur : &cVous êtes déjà devant un écran !"
+			stop
+		# message "{@logo} &6Vérification de la configuration de l'écran"
+		if verifScreen(player) is not 1:
+			message "{@logo} &4Erreur : &cVous n'êtes pas face à un écran"
+			stop
+		message "{@logo} &aBienvenue, &6%player%"
+		message ""
+		set {_newLocP} to location at (round down x-pos of player) + 0.5 , y-pos of player , (round down z-pos of player) + 0.5 + 0.19999
+		set yaw of {_newLocP} to 0.01
+		set pitch of {_newLocP} to 0.01
+		teleport player to {_newLocP}
+		# execute console command "tp %player% ~ ~ ~ 0 0"
+		# set {_loc} to location at x-pos of player, y-pos of player + 1.5 , z-pos of player + 2.2
+		# if {@McVersion} is 9 or 10:
+			# execute console command "summon {@idAS9} %x-pos of player% %y-pos of player + 1.5% %z-pos of player + 2.2% {@dataCurseur}"
+		# else if {@McVersion} is 8:
+			# execute console command "summon {@idAS9} %x-pos of player% %y-pos of player + 1.5% %z-pos of player + 2.2% {@dataCurseur8}"
+		# else if {@McVersion} is 11:
+			# execute console command "summon {@idAS11} %x-pos of player% %y-pos of player + 1.5% %z-pos of player + 2.2% {@dataCurseur}"
+		# futur éventuel support des versions 1.8 et 1.11
+		set {_dataCurseur} to "{@dataCurseur}"
+		# broadcast "summon {@idAS9} %x-pos of player% %y-pos of player + 1.5% %z-pos of player + 2.2% %{_dataCurseur}%"
+		spawn 1 armor stand at location at x-pos of player , y-pos of player + 1.5 , z-pos of player + 2.2
+		add "{@dataCurseur}" to nbt of last spawned entity
+		# execute console command "execute %player% ~ ~ ~ summon {@idAS9} %x-pos of player% %y-pos of player + 1.5% %z-pos of player + 2.2% %{_dataCurseur}%"
+		spawn 1 armor stand at location at  x-pos of player , y-pos of player , z-pos of player +0.3
+		add "{Tags:[""click""],NoGravity:1,Invisible:1,CustomName:""CLICKa87fez1428eds""}" to nbt of last spawned entity
+		# execute console command "execute %player% ~ ~ ~ summon {@idAS9} ~ ~ ~0.3 {Tags:[""click""],NoGravity:1,Invisible:1,CustomName:""click""}"
+		set {screen.%player's uuid%.onScreen} to true
+		set {screen.%player's uuid%.loc} to location of player
+		wait 1 tick
+		set yaw of {screen.%player's uuid%.loc} to 0.01
+		set pitch of {screen.%player's uuid%.loc} to 0.01
+		# broadcast "y %yaw of {screen.%player's uuid%.loc}%"
+		# broadcast "p %pitch of {screen.%player's uuid%.loc}%"
+		set {screen.%player's uuid%.curseur} to "0||0" # ATTENTION : le y est bon, mais le x est inversé !!!
+		loop 36 times:
+			set {screen.%player's uuid%.hotbar::%loop-value%} to slot (loop-value) -1 of player
+			set slot (loop-value) -1 of player to air
+		
+		set {screen.%player's uuid%.hotbar::offhand} to offhand tool of player
+		set offhand tool of player to air
+		
+		loop 9 times:
+			set slot (loop-value) -1 of player to brown mushroom
+		# set slot 0,1,2,3,4,5,6,7,8 of player to brown mushroom # marche pas, bizarre ... ?
+		
+		add player to {screen.playersOnScreen::*}
+		loadScreen(player , "{@screenBvn}")
+		
+command /{@cmdQuitScreen}:
+	executable by: players
+	aliases: quits, qscreen, quitscr, qsc
+	trigger:
+		if {screen.playersOnScreen::*} is not set:
+			message "{@logo} &4Erreur : &cVous n'êtes pas devant un écran !"
+			stop
+		if containsP({screen.playersOnScreen::*} , player) is false:
+			message "{@logo} &4Erreur : &cVous n'êtes pas devant un écran !"
+			stop
+		set {screen.%player's uuid%.onScreen} to false
+		delete {screen.%player's uuid%.loc}
+		delete {screen.%player's uuid%.curseur}
+		#--- on sait jamais, si un type a décidé de quitter sauvagement pdt la création d'un bouton
+		stopEffect "%player's uuid%_y_ptFixe" 
+		stopEffect "%player's uuid%_x_ptFixe"
+		stopEffect "%player's uuid%_y_curseur"
+		stopEffect "%player's uuid%_x_curseur"
+		kill {screen.%player's uuid%.createNew::newButton::y}
+		kill {screen.%player's uuid%.createNew::newButton::x}
+		kill {screen.%player's uuid%.createNew::newButton::ptFixe}
+		kill {screen.%player's uuid%.createNew::newButton::curseur}
+		#---
+		delete {screen.%player's uuid%.createNew::*}
+		remove player from {screen.playersOnScreen::*}
+		loop 36 times:
+			set slot (loop-value) -1 of player to {screen.%player's uuid%.hotbar::%loop-value%}
+		set offhand tool of player to {screen.%player's uuid%.hotbar::offhand}
+		delete {screen.%player's uuid%.hotbar::*}
+		unloadScreen(player, true)
+		
+
+command /{@cmdReloadScreen}:
+	executable by: players
+	aliases: rlscreen, rsc
+	trigger:
+		if containsP({screen.playersOnScreen::*} , player) is false:
+			message "{@logo} &4Erreur : &cVous n'êtes pas devant un écran !"
+			stop
+		else if {screen.playersOnScreen::*} is not set:
+			message "{@logo} &4Erreur : &cVous n'êtes pas devant un écran !"
+			stop
+		set {_uuid} to uuid of player
+		set {_name} to {screen.%{_uuid}%.activeScreen::name} 
+		unloadScreen(player)
+		loadScreen(player , {_name})
+		
+		
+command /{@cmdLoadScreen} [<text>]:
+	executable by: players
+	aliases: lscreen, lsc
+	trigger:
+		if containsP({screen.playersOnScreen::*} , player) is false:
+			message "{@logo} &4Erreur : &cVous n'êtes pas devant un écran !"
+			stop
+		else if {screen.playersOnScreen::*} is not set:
+			message "{@logo} &4Erreur : &cVous n'êtes pas devant un écran !"
+			stop
+		if arg-1 is not set:
+			message "{@logo} &4&lErreur : &4Veuillez donner le nom de l'écran à charger"
+			stop
+		set {_uuid} to uuid of player
+		set {_name} to arg-1
+		if file "{@path}%{_name}%.txt" does not exist:
+			message "{@logo} &4&lErreur : &4L'écran n'existe pas"
+			message "&c(""%{_name}%.txt"", nom complet: ""{@path}%{_name}%.txt"")"
+			stop
+		unloadScreen(player)
+		loadScreen(player , {_name})
+
+
+# N'utilisez ces 2 commandes que si vous avez bien compris ce qu'elles faisaient
+# command /fjsc:
+	# trigger:
+		# add player to {screen.playersOnScreen::*} # force l'ajout dans la liste des joueurs sur écrans
+
+# command /fqsc:
+	# trigger:
+		# remove player from {screen.playersOnScreen::*} # force la suppression du joueur de la liste des joueurs sur écrans
+		# /!\ ne DECHARGE PAS l'écran
+	
+	
+command /registerScreen:
+	aliases: registersc, regsc
+	trigger:
+		if player has permission "{@permission}":
+			set {_loc} to location of block at player
+			if containsLoc({screen.locations::*} , {_loc}) is true:
+				message "{@logo} &cCette position a déjà été enregistrée"
+				stop
+				
+			message "{@logo} &8La position &a%x-pos of {_loc}%&8 / &a%y-pos of {_loc}%&8 / &a%z-pos of {_loc}%&8 a été enregistrée comme un écran !"
+			add {_loc} to {screen.locations::*}
+			
+		else:
+			message "{@logo} &cVous n'avez pas la permission d'utiliser cette commande"
+			
+			
+command /unregisterScreen:
+	aliases: unregistersc, unregsc
+	trigger:
+		if player has permission "{@permission}":
+			set {_loc} to location of block at player
+			if containsLoc({screen.locations::*} , {_loc}) is false:
+				message "{@logo} &cCette position n'est pas enregistrée"
+				stop
+				
+			message "{@logo} &8La position &a%x-pos of {_loc}%&8 / &a%y-pos of {_loc}%&8 / &a%z-pos of {_loc}%&8 a été supprimée de la liste des écran !"
+			remove {_loc} from {screen.locations::*}
+		else:
+			message "{@logo} &cVous n'avez pas la permission d'utiliser cette commande"
+		
+		
+		
+command /buildScreen: # commande probablement la moins optimisée possible
+	Aliases: buildscr, bsc # mais c'est pour faire une sorte d'animation un peu stylée
+	trigger:
+		if player has permission "{@permission}":
+			message "{@logo} &8Construction d'un écran..."
+			set {_w} to world of player
+			set {_loc1} to location of target block of player
+			
+			
+			set {_loc2} to location at x-pos of {_loc1} +10 , y-pos of {_loc1} +10 , z-pos of {_loc1} +4 in {_w}
+			
+			set (blocks within {_loc1} to {_loc2}) to air
+			
+			set {_loc2} to location at x-pos of {_loc1} +1 , y-pos of {_loc1} , z-pos of {_loc1} +1 in {_w}
+			loop 3 times:
+				setLigneOfBlock({_loc2} , 9 , east , black wool)
+				set {_loc2} to location at x-pos of {_loc2} , y-pos of {_loc2} , z-pos of {_loc2} +1 in {_w}
+				wait 5 ticks
+				
+				
+			set {_loc2} to location at x-pos of {_loc1} +1 , y-pos of {_loc1} +1 , z-pos of {_loc1} in {_w}
+			loop 9 times:
+				setLigneOfBlock({_loc2} , 9 , east , black wool)
+				set {_loc2} to location at x-pos of {_loc2} , y-pos of {_loc2} +1 , z-pos of {_loc2} in {_w}
+				wait 5 ticks
+			
+				
+			set {_x} to 0
+			set {_y} to 0
+			loop 9 times:
+				add 1 to {_y}
+				set {_x} to 0
+				if {_y} is 1:
+					loop 9 times:
+						add 1 to {_x}
+						set {_loc2} to location at x-pos of {_loc1} + {_x} , y-pos of {_loc1} + {_y} , z-pos of {_loc1} +1 in {_w}
+						if {_x} is 1 or 3 or 5 or 7 or 9:
+							set block at {_loc2} to unlit_redstone_lamp
+							if {_x} is 1 or 5 or 9:
+								set block at location at x-pos of {_loc2} , y-pos of {_loc2} , z-pos of {_loc2} +1 in {_w} to unlit_redstone_lamp
+						else if {_x} is 2 or 4:
+							set block at {_loc2} to repeater_west
+						else if {_x} is 6 or 8:
+							set block at {_loc2} to repeater_east
+						wait 1 ticks
+						
+				else if {_y} is 2:
+					loop 9 times:
+						add 1 to {_x}
+						set {_loc2} to location at x-pos of {_loc1} + {_x} , y-pos of {_loc1} + {_y} , z-pos of {_loc1} +1 in {_w}
+						if {_x} is 1 or 9:
+							set block at {_loc2} to unlit_redstone_lamp
+							if {_x} is 1 or 9:
+								set block at location at x-pos of {_loc2} , y-pos of {_loc2} , z-pos of {_loc2} +1 in {_w} to black carpet
+						else if {_x} is 2 or 4 or 6 or 8:
+							set block at {_loc2} to black wool
+						else if {_x} is 3 or 7:
+							set block at {_loc2} to torch_on_sol
+						else if {_x} is 5:
+							set block at {_loc2} to redstone_powder
+							set block at location at x-pos of {_loc2} , y-pos of {_loc2} , z-pos of {_loc2} +1 in {_w} to black carpet
+						wait 1 ticks
+				else if {_y} is 3:
+					loop 9 times:
+						add 1 to {_x}
+						set {_loc2} to location at x-pos of {_loc1} + {_x} , y-pos of {_loc1} + {_y} , z-pos of {_loc1} +1 in {_w}
+						if {_x} is 4 or 6:
+							set block at {_loc2} to lever
+						else if {_x} is 2:
+							set block at {_loc2} to torch_off_mur_east
+						else if {_x} is 8:
+							set block at {_loc2} to torch_off_mur_west
+						else if {_x} is 1 or 3 or 7 or 9:
+							set block at {_loc2} to black wool
+						else if {_x} is 5:
+							set block at {_loc2} to light blue wool
+							set block at location at x-pos of {_loc2} , y-pos of {_loc2} , z-pos of {_loc2} +1 in {_w} to barrier
+						wait 1 ticks
+				else if {_y} is 4:
+					loop 9 times:
+						add 1 to {_x}
+						set {_loc2} to location at x-pos of {_loc1} + {_x} , y-pos of {_loc1} + {_y} , z-pos of {_loc1} +1 in {_w}
+						if {_x} is 1:
+							set block at {_loc2} to torch_off_mur_east
+						else if {_x} is 9:
+							set block at {_loc2} to torch_off_mur_west
+						else if {_x} is 3 or 4 or 6 or 7:
+							set block at {_loc2} to black wool
+							if {_x} is 4 or 6:
+								set block at location at x-pos of {_loc2} , y-pos of {_loc2} , z-pos of {_loc2} +1 in {_w} to barrier
+						else if {_x} is 2 or 8:
+							set block at {_loc2} to unlit_redstone_lamp
+						else if {_x} is 5:
+							set block at {_loc2} to stone_pressure_plate
+							set block at location at x-pos of {_loc2} , y-pos of {_loc2} , z-pos of {_loc2} +2 in {_w} to barrier
+						wait 1 ticks
+				else if {_y} is 5:
+					loop 9 times:
+						add 1 to {_x}
+						set {_loc2} to location at x-pos of {_loc1} + {_x} , y-pos of {_loc1} + {_y} , z-pos of {_loc1} +1 in {_w}
+						if {_x} is 2:
+							set block at {_loc2} to torch_off_mur_west
+						else if {_x} is 8:
+							set block at {_loc2} to torch_off_mur_east
+						else if {_x} is 1 or 4 or 6 or 9:
+							set block at {_loc2} to black wool
+							if {_x} is 4 or 6:
+								set block at location at x-pos of {_loc2} , y-pos of {_loc2} , z-pos of {_loc2} +1 in {_w} to barrier
+						else if {_x} is 5:
+							set block at location at x-pos of {_loc2} , y-pos of {_loc2} , z-pos of {_loc2} +2 in {_w} to barrier
+						else if {_x} is 3 or 7:
+							set block at {_loc2} to unlit_redstone_lamp
+						wait 1 ticks
+				else if {_y} is 6:
+					loop 9 times:
+						add 1 to {_x}
+						set {_loc2} to location at x-pos of {_loc1} + {_x} , y-pos of {_loc1} + {_y} , z-pos of {_loc1} +1 in {_w}
+						if {_x} is 1 or 9:
+							set block at {_loc2} to torch_off_sol
+							set block at location at x-pos of {_loc2} , y-pos of {_loc2} , z-pos of {_loc2} +1 in {_w} to unlit_redstone_lamp
+						else if {_x} is 3:
+							set block at {_loc2} to repeater_east
+						else if {_x} is 2 or 4 or 5 or 6 or 8:
+							set block at {_loc2} to unlit_redstone_lamp
+						else if {_x} is 7:
+							set block at {_loc2} to repeater_west
+						wait 1 ticks
+				else if {_y} is 7:
+					loop 9 times:
+						add 1 to {_x}
+						set {_loc2} to location at x-pos of {_loc1} + {_x} , y-pos of {_loc1} + {_y} , z-pos of {_loc1} +1 in {_w}
+						if {_x} is 1 or 3 or 7 or 9:
+							set block at {_loc2} to black wool
+						else if {_x} is 4 or 5 or 6:
+							set block at {_loc2} to unlit_redstone_lamp
+						else if {_x} is 2 or  8:
+							set block at {_loc2} to torch_on_sol
+						wait 1 ticks
+				else if {_y} is 8:
+					loop 9 times:
+						add 1 to {_x}
+						set {_loc2} to location at x-pos of {_loc1} + {_x} , y-pos of {_loc1} + {_y} , z-pos of {_loc1} +1 in {_w}
+						if {_x} is 1 or 2 or 8 or 9:
+							set block at {_loc2} to black wool
+						else if {_x} is 5:
+							set block at {_loc2} to unlit_redstone_lamp
+						else if {_x} is 3:
+							set block at {_loc2} to torch_off_mur_west
+						else if {_x} is 7:
+							set block at {_loc2} to torch_off_mur_east
+						else if {_x} is 4:
+							set block at {_loc2} to repeater_east
+						else if {_x} is 6:
+							set block at {_loc2} to repeater_west
+						wait 1 ticks
+				else if {_y} is 9:
+					loop 9 times:
+						add 1 to {_x}
+						set {_loc2} to location at x-pos of {_loc1} + {_x} , y-pos of {_loc1} + {_y} , z-pos of {_loc1} +1 in {_w}
+						if {_x} is 1 or 2 or 3 or 5 or 7 or 8 or 9:
+							set block at {_loc2} to black wool
+						else if {_x} is 4 or 6:
+							set block at {_loc2} to unlit_redstone_lamp
+						wait 1 ticks
+							
+					
+			set {_x} to 0
+			set {_y} to 0
+			loop 3 times:
+				add 1 to {_y}
+				set {_x} to 0
+				loop 3 times:
+					add 1 to {_x}
+					set {_loc2} to location at x-pos of {_loc1} + {_x} +3 , y-pos of {_loc1} + {_y} +3 , z-pos of {_loc1} in {_w}
+					set block at {_loc2} to air
+					wait 2 ticks
+			
+			set block at location at x-pos of {_loc1} +5 , y-pos of {_loc1} +7 , z-pos of {_loc1} in {_w} to air
+			wait 2 ticks
+			
+			
+			set {_loc2} to location at x-pos of {_loc1} +10 , y-pos of {_loc1} +1 , z-pos of {_loc1} +1 in {_w}
+			loop 3 times:
+				setLigneOfBlock({_loc2} , 9 , up , black wool)
+				set {_loc2} to location at x-pos of {_loc2} , y-pos of {_loc2} , z-pos of {_loc2} +1 in {_w}
+				wait 5 ticks
+
+			set {_loc2} to location at x-pos of {_loc1} +9 , y-pos of {_loc1} +1 , z-pos of {_loc1} +4 in {_w}
+			loop 9 times:
+				setLigneOfBlock({_loc2} , 9 , up , black wool)
+				set {_loc2} to location at x-pos of {_loc2} -1 , y-pos of {_loc2}, z-pos of {_loc2} in {_w}
+				wait 5 ticks				
+				
+			set {_loc2} to location at x-pos of {_loc1} , y-pos of {_loc1} +1 , z-pos of {_loc1} +3 in {_w}
+			loop 3 times:
+				setLigneOfBlock({_loc2} , 9 , up , black wool)
+				set {_loc2} to location at x-pos of {_loc2} , y-pos of {_loc2} , z-pos of {_loc2} -1 in {_w}
+				wait 5 ticks				
+				
+			wait 12 ticks
+			set {_loc2} to location at x-pos of {_loc1} +1 , y-pos of {_loc1} +10 , z-pos of {_loc1} +3 in {_w}
+			loop 3 times:
+				setLigneOfBlock({_loc2} , 9 , east , black wool)
+				set {_loc2} to location at x-pos of {_loc2} , y-pos of {_loc2} , z-pos of {_loc2} -1 in {_w}
+				wait 5 ticks
+				
+			message "{@logo} &aConstruction terminée !"
+		else:
+			message "{@logo} &cVous n'avez pas la permission d'utiliser cette commande"
+			
+	
+	
+every {@refreshCurseur} seconds:
+	loop {screen.playersOnScreen::*}:
+	
+		set {_yaw} to yaw of loop-value # yaw = orientation horizontale	= axe x
+		set {_pitch} to pitch of loop-value # pitch = orientation verticale = axe y
+		
+		if x-pos of {screen.%loop-value's uuid%.loc} is not equal to x-pos of loop-value:
+			teleport loop-value to {screen.%loop-value's uuid%.loc}
+		if y-pos of {screen.%loop-value's uuid%.loc} is not equal to y-pos of loop-value:
+			teleport loop-value to {screen.%loop-value's uuid%.loc}
+		if z-pos of {screen.%loop-value's uuid%.loc} is not equal to z-pos of loop-value:
+			teleport loop-value to {screen.%loop-value's uuid%.loc}
+		# broadcast "pitch : %pitch of loop-value% OU %{_pitch}%"
+		# broadcast "yaw : %{_yaw}%"
+		# broadcast "%pitch of {screen.%loop-value's uuid%.loc}%"
+		if "%{_pitch}%" is not equal to "0.01":
+			# broadcast "pitch is not equal to 0.01"
+			# execute console command "tp %loop-value% ~ ~ ~ 0 0"
+			set {_modifP} to 0 - {_pitch}/5
+			teleport loop-value to {screen.%loop-value's uuid%.loc}
+			
+		if "%{_yaw}%" is not equal to "0.01":
+			# broadcast "yaw is not equal to 0.01"
+			# execute console command "tp %loop-value% ~ ~ ~ 0 0"
+			if {_yaw} is greater than 180:
+				set {_yaw} to {_yaw} - 360	
+			set {_modifY} to 0 - {_yaw}/5
+			teleport loop-value to {screen.%loop-value's uuid%.loc}
+			
+		
+		set {_temp::*} to {screen.%loop-value's uuid%.curseur} split by "||"
+		set {_xCurs} to {_temp::1} parsed as number
+		set {_yCurs} to {_temp::2} parsed as number
+		
+		if {_yCurs} + {_modifP} is not between -3.05 and 2.2:
+			if {_modifP} is greater than 0:
+				set {_modifP} to 2.2 - {_yCurs}
+			else:
+				set {_modifP} to -3.05 - {_yCurs}
+			if {_modifP} is 0:
+				delete {_modifP}
+				
+		if {_xCurs} + {_modifY} is not between -3.68 and 3.68:
+			if {_modifY} is greater than 0:
+				set {_modifY} to 3.68 - {_xCurs}
+			else:
+				set {_modifY} to -3.68 - {_xCurs}
+			if {_modifY} is 0:
+				delete {_modifY}
+		
+		
+		set {_locLoopEntity} to location at x-pos of loop-value, (y-pos of (loop-value) + 1) , (z-pos of (loop-value) +1) in loop-value's world
+				
+		if {_modifP} is set:
+			if {_modifY} is set:
+				# execute console command "execute %loop-value% ~ ~ ~ tp @e[tag=curseur,c=%{screen.%loop-value's uuid%.activeScreen::nbCurseur}%] ~%{_modifY}% ~%{_modifP}% ~"
+				# execute console command "execute %loop-value% ~ ~ ~ tp @e[tag=curseur,c=1] ~%{_modifY}% ~%{_modifP}% ~"
+				loop all entities in radius {@radiusX} , {@radiusY} , {@radiusZ} around {_locLoopEntity}:
+					if loop-value-2 is armor stand:
+						if "%name of loop-value-2%" is "§CURSEURaer782d564qsf8":
+							teleport loop-value-2 to location at x-pos of loop-value-2 + {_modifY} , y-pos of loop-value-2 + {_modifP} , (z-pos of loop-value-2) in loop-value-1's world
+							exit loop
+				set {_xCurs} to {_xCurs} + {_modifY}
+				set {_yCurs} to {_yCurs} + {_modifP}
+			else:
+				# execute console command "execute %loop-value% ~ ~ ~ tp @e[tag=curseur,c=%{screen.%loop-value's uuid%.activeScreen::nbCurseur}%] ~ ~%{_modifP}% ~"
+				# execute console command "execute %loop-value% ~ ~ ~ tp @e[tag=curseur,c=1] ~ ~%{_modifP}% ~"
+				loop all entities in radius {@radiusX} , {@radiusY} , {@radiusZ} around {_locLoopEntity}:
+					if loop-value-2 is armor stand:
+						if "%name of loop-value-2%" is "§CURSEURaer782d564qsf8":
+							teleport loop-value-2 to location at x-pos of loop-value-2 , y-pos of loop-value-2 + {_modifP} , (z-pos of loop-value-2) in loop-value-1's world
+							exit loop
+				set {_yCurs} to {_yCurs} + {_modifP}
+				
+		else if {_modifY} is set:
+			# execute console command "execute %loop-value% ~ ~ ~ tp @e[tag=curseur,c=%{screen.%loop-value's uuid%.activeScreen::nbCurseur}%] ~%{_modifY}% ~ ~"
+			# execute console command "execute %loop-value% ~ ~ ~ tp @e[tag=curseur,c=1] ~%{_modifY}% ~ ~"
+			loop all entities in radius {@radiusX} , {@radiusY} , {@radiusZ} around {_locLoopEntity}:
+				if loop-value-2 is armor stand:
+					if "%name of loop-value-2%" is "§CURSEURaer782d564qsf8":
+						teleport loop-value-2 to location at x-pos of loop-value-2 + {_modifY} , y-pos of loop-value-2, (z-pos of loop-value-2) in loop-value-1's world
+						exit loop
+						
+			set {_xCurs} to {_xCurs} + {_modifY}
+		
+		delete {_modifP}
+		delete {_modifY}
+		set {screen.%loop-value's uuid%.curseur} to "%{_xCurs}%||%{_yCurs}%"
+		
+		if {screen.%loop-value's uuid%.createNew::step} contains "settingPositionOfNewText":
+			set {_raw::*} to {screen.%loop-value's uuid%.createNew::step} split by "{@section}"
+			# broadcast "%{_raw::*}%"
+			# raw::1=step , 2=Texte affiché , 3=ID , 4=Z
+			
+			loop all entities in radius {@radiusX} , {@radiusY} , {@radiusZ} around {_locLoopEntity}:
+				if loop-value-2 is armor stand:
+					if "%name of loop-value-2%" is colored {_raw::2}:
+						teleport loop-value-2 to location at ((x-pos of loop-value-1) + {_xCurs}) , ((y-pos of loop-value-1) + {_yCurs}) , (z-pos of loop-value-1) + {_raw::4} parsed as number in (loop-value-1)'s world
+			
+		
+		if {screen.%loop-value's uuid%.createNew::step} contains "settingPositionOfNewButton2":
+			set {_newLocY} to location at x-pos of {screen.%loop-value's uuid%.createNew::newButton::y} , ((y-pos of loop-value) + {_yCurs} + 0.53 +1.5) , z-pos of {screen.%loop-value's uuid%.createNew::newButton::y} in (loop-value)'s world
+			set {_newLocX} to location at ((x-pos of loop-value) + {_xCurs} -0.1) , (y-pos of {screen.%loop-value's uuid%.createNew::newButton::x}) , (z-pos of {screen.%loop-value's uuid%.createNew::newButton::y}) in (loop-value)'s world
+		
+		
+			teleport {screen.%loop-value's uuid%.createNew::newButton::y} to {_newLocY}
+			teleport {screen.%loop-value's uuid%.createNew::newButton::x} to {_newLocX}
+			
+			loop all entities in radius {@radiusX} , {@radiusY} , {@radiusZ} around {_locLoopEntity}:
+				if loop-value-2 is armor stand:
+					if "%name of loop-value-2%" is "§CURSEURaer782d564qsf8":
+						teleport {screen.%loop-value-1's uuid%.createNew::newButton::curseur} to location at (x-pos of (loop-value-2) -0.1) , (y-pos of (loop-value-2) -0.47) , (z-pos of loop-value-2) in loop-value-2's world 
+						exit loop
+	
+		
+		
+on damage of armor stand: # LEFTCLICK
+	if containsP({screen.playersOnScreen::*} , attacker) is true:
+		cancel event
+		
+		wait 1 tick
+		set {_coord::*} to {screen.%attacker's uuid%.curseur} split by "||"
+		# send "LEFTCLICK - x:%{_coord::1}%/y:%{_coord::2}%" to attacker
+		
+		set {_uuid} to uuid of attacker
+		
+		
+		# broadcast "loop des boutons"
+		loop {screen.%{_uuid}%.activeScreen.buttons::*}:
+			set {_raw::*} to loop-value split by "||"
+			#set {_button} to "%{_xmin}%||%{_ymin}%||%{_xmax}%||%{_ymax}%||%{_triggerType}%||%{_argTrigger}%"
+			{_raw::1} contains "LEFT"
+				
+			set {_xmin} to {_raw::2}
+			set {_ymin} to {_raw::3}
+			set {_xmax} to {_raw::4}
+			set {_ymax} to {_raw::5}
+				
+			{_coord::1} parsed as number is between {_xmin} parsed as number and {_xmax} parsed as number
+			
+			{_coord::2} parsed as number is between {_ymin} parsed as number and {_ymax} parsed as number
+				
+		
+			# broadcast "%{_xmin}% < %{_coord::1}% < %{_xmax}%"
+			# broadcast "%{_ymin}% < %{_coord::2}% < %{_ymax}%"
+			# broadcast "%{_raw::*}%"
+			
+			set {_triggerType} to {_raw::6}
+			if {_triggerType} is "command":
+				set {_commands::*} to {_raw::7} split by "[|]"
+				loop {_commands::*}:
+					set {_command} to loop-value-2
+					replace all "&" with "§" in {_command}
+					execute console command "%{_command}%"
+				
+			else if {_triggerType} is "effect":
+				set {_effects::*} to {_raw::7} split by "[|]"
+				loop {_effects::*}:
+					set {_effect} to loop-value-2
+					replace all "player" with "attacker" in {_effect}
+					evaluate "%{_effect}%"
+			
+			else if {_triggerType} is "screenEffect":
+				# send "triggerType screenEffect: %loop-value-2%" to attacker
+				set {_arg::*} to {_raw::7} split by " "
+				if {_arg::1} is "load" or "lsc":
+					unloadScreen(attacker)
+					loadScreen(attacker, {_arg::2})
+				
+				# else if {_arg::1} is "cursor": # pas implémenté, on verra plus tard
+					# if {_arg::2} is "change" or "modify" or "edit":
+						# set {_tag} to {_arg::3}
+						# set {_newItem::*} to {_arg::4} split by ":"
+						# if {_newItem::2} is not set:
+							# set {_newItem::2} to 0
+						# execute console command "execute %attacker% ~ ~ ~ entitydata @e[tag=couleurActive,c=1,r=6] {HandItems:[{id:""%{_newItem::1}%"",Count:1,Damage:%{_newItem::2}%},{id:""%{_newItem::1}%"",Count:1,Damage:%{_newItem::2}%}]}"
+						
+					# else:
+						# send "{@logo} &4&lErreur : &4Argument non reconnu pour l'effet &6%{_arg::1}%&4 : &c%{_arg::2}%" to attacker
+						# send "&c(Effet complet : ""%{_raw::7}%"" - screen %{screen.%{_uuid}%.activeScreen::name}%)" to attacker
+				
+				else if {_arg::1} is "quit" or "qsc":
+					make attacker say "qsc"
+				
+				else:
+					send "{@logo} &4&lErreur : &4Argument non reconnu : &c%{_arg::1}%" to attacker
+					send "&c(Bouton n°%loop-value-1% du screen %{screen.%{_uuid}%.activeScreen::name}%)" to attacker
+				
+			else:
+				send "{@logo} &4&lErreur : &4triggerType non reconnu : &c%{_triggerType}%" to attacker
+				send "&c(Bouton n°%loop-value-1% du screen %{screen.%{_uuid}%.activeScreen::name}%)" to attacker
+		
+		
+
+		if {screen.%attacker's uuid%.createNew::step} contains "settingPositionOfNewButton":
+			
+			set {_locCurseur::*} to {screen.%attacker's uuid%.curseur} split by "||"
+			set {_locc} to location at x-pos of attacker + {_locCurseur::1} parsed as number , y-pos of attacker + {_locCurseur::2} parsed as number + 1 , z-pos of attacker +2.2 in attacker's world
+			set {_locy} to location at x-pos of attacker + {_locCurseur::1} parsed as number +0.2 , y-pos of attacker + {_locCurseur::2} parsed as number + 1 , z-pos of attacker +2.2 in attacker's world
+			set {_locx} to location at x-pos of attacker + {_locCurseur::1} parsed as number , y-pos of attacker + {_locCurseur::2} parsed as number + 2.5 -0.47 , z-pos of attacker +2.2 in attacker's world
+			set {_locp} to location at x-pos of attacker + {_locCurseur::1} parsed as number +0.2 , y-pos of attacker + {_locCurseur::2} parsed as number + 1 , z-pos of attacker +2.2 in attacker's world
+		
+			if {screen.%attacker's uuid%.createNew::step} contains "settingPositionOfNewButton1":
+			
+				spawn 1 armor stand at {_locp}
+				set {screen.%attacker's uuid%.createNew::newButton::ptFixe} to last spawned entity
+				add "{Small:1,NoGravity:1,Invisible:1,Tags:[""POINTFIXE_1724100124574512"",""InEditorInEditor""]}" to nbt of {screen.%attacker's uuid%.createNew::newButton::ptFixe}
+			
+				spawn 1 armor stand at {_locy}
+				set {screen.%attacker's uuid%.createNew::newButton::y} to last spawned entity
+				add "{Small:1,NoGravity:1,Invisible:1,Tags:[""y_1724100124574512"",""InEditorInEditor""]}" to nbt of {screen.%attacker's uuid%.createNew::newButton::y}
+				
+				spawn 1 armor stand at {_locx}
+				set {screen.%attacker's uuid%.createNew::newButton::x} to last spawned entity
+				add "{Small:1,NoGravity:1,Invisible:1,Tags:[""x_1724100124574512"",""InEditorInEditor""]}" to nbt of {screen.%attacker's uuid%.createNew::newButton::x}
+				
+				spawn 1 armor stand at {_locc}
+				set {screen.%attacker's uuid%.createNew::newButton::curseur} to last spawned entity
+				add "{Small:1,NoGravity:1,Invisible:1,Tags:[""curseur_1724100124574512"",""InEditorInEditor""]}" to nbt of {screen.%attacker's uuid%.createNew::newButton::curseur}
+			
+				# vertical gauche vert
+				drawLine particle redstone, RGB 0, 255, 0, center {screen.%attacker's uuid%.createNew::newButton::ptFixe}, target {screen.%attacker's uuid%.createNew::newButton::y}, id "%attacker's uuid%_y_ptFixe", solid true, density 50, zigZag count 0, height 0, visibleRange 20, displacementXYZ 0, 1, 0
+				
+				# horizontal bas rouge
+				drawLine particle redstone, RGB 0, 255, 0, center {screen.%attacker's uuid%.createNew::newButton::ptFixe}, target {screen.%attacker's uuid%.createNew::newButton::x}, id "%attacker's uuid%_x_ptFixe", solid true, density 50, zigZag count 0, height 0, visibleRange 20, displacementXYZ 0, 1, 0
+				
+				# horizontal haut bleu
+				drawLine particle redstone, RGB 0, 255, 0, center {screen.%attacker's uuid%.createNew::newButton::curseur}, target {screen.%attacker's uuid%.createNew::newButton::y}, id "%attacker's uuid%_y_curseur", solid true, density 50, zigZag count 0, height 0, visibleRange 20, displacementXYZ 0, 1, 0
+				
+				# vertical droite noir
+				drawLine particle redstone, RGB 0, 255, 0, center {screen.%attacker's uuid%.createNew::newButton::curseur}, target {screen.%attacker's uuid%.createNew::newButton::x}, id "%attacker's uuid%_x_curseur", solid true, density 50, zigZag count 0, height 0, visibleRange 20, displacementXYZ 0, 1, 0
+				
+				set {screen.%attacker's uuid%.createNew::newButton::firstPos} to "%{_locCurseur::1}%||%{_locCurseur::2}%"
+				
+				replace all "settingPositionOfNewButton1{@section}" with "settingPositionOfNewButton2{@section}" in {screen.%attacker's uuid%.createNew::step}
+				# broadcast {screen.%attacker's uuid%.createNew::step}
+				message "{@charRepConsole}&8Premier sommet défini !" to attacker
+				stop
+				
+			else if {screen.%attacker's uuid%.createNew::step} contains "settingPositionOfNewButton2":
+				message "{@charRepConsole}&8Deuxième sommet défini !" to attacker
+				message "&8Le rectangle vert affiché est la zone cliquable du bouton" to attacker
+				message "&8Cela vous convient-il ? (oui/non)" to attacker
+				set {screen.%attacker's uuid%.createNew::newButton::secondPos} to "%{_locCurseur::1}%||%{_locCurseur::2}%" # temporaire, sujet à être supprimé si la reponse est non
+				
+				replace all "settingPositionOfNewButton2{@section}" with "confirm_newPosButton{@section}" in {screen.%attacker's uuid%.createNew::step}
+				stop
+			# step = confirm.. / settingPostee... / ID / EFFET 
+	
+	
+on rightclick on armor stand:
+	if containsP({screen.playersOnScreen::*} , player) is true:
+		set {_coord::*} to {screen.%player's uuid%.curseur} split by "||"
+		# send "RIGHTCLICK - x:%{_coord::1}%/y:%{_coord::2}%" to player
+		cancel event
+				
+		
+		
+on chat:
+# - - - CREATION DE SCREEN IG (cherchez pas à comprendre l'ordre dans lequel est fait le code, moi-même jle connais pas)
+
+	if {screen.%player's uuid%.createNew::step} is set:
+		if first character of message is ".":
+			set message to last (length of message -1) characters of message
+			stop
+		cancel event
+		message " &6> &7%message%"
+		if message is "cancel" or "annuler" or "arreter" or "OMG CETTE CREATION DE SCREEN EST VRAIMENT PARFAITE WOW":
+			message "{@charRepConsole}&8Êtes vous sûr de vouloir annuler la création du screen ? (oui/non)"
+			set {screen.%player's uuid%.createNew::step} to "confirm_cancelCreationOfScreen{@sectionCancel}%{screen.%player's uuid%.createNew::step}%"
+			stop
+			
+			
+		wait 2 tick
+		set {_step} to {screen.%player's uuid%.createNew::step}
+		
+		# broadcast {_step}
+		
+		if {_step} contains "confirm":
+			if message is not "oui" or "non":
+				message "{@charRepConsole}&cVeuillez répondre seulement par oui ou non"
+				stop
+				
+			if {_step} contains "cancelCreationOfScreen":
+				if message is "oui":
+					message  "{@charRepConsole}&8Annulation de la création du nouveau screen, chargement de l'écran d'accueil"
+				
+					loop all entities in radius {@radiusX} , {@radiusY} , {@radiusZ} around location at x-pos of player, y-pos of player + 1 , z-pos of player +1 in player's world:
+						# broadcast "%loop-value%"
+						if loop-entity is armor stand:
+							if "%nbt of loop-entity%" contains "InEditorInEditor":
+								delete loop-entity			
+					
+					if file "{@path}%{screen.%player's uuid%.createNew::data::name}%.txt" exists:
+						delete file "{@path}%{screen.%player's uuid%.createNew::data::name}%.txt"
+					
+					stopEffect "%player's uuid%_y_ptFixe" 
+					stopEffect "%player's uuid%_x_ptFixe"
+					stopEffect "%player's uuid%_y_curseur"
+					stopEffect "%player's uuid%_x_curseur"
+					
+					
+					
+					delete {screen.%player's uuid%.createNew::*}
+					loadScreen(player, "{@screenAccueil}")
+					stop
+					
+				else if message is "non":
+					message "{@charRepConsole}&8Retour à l'étape précédente de création du screen"
+					message ""
+					set {_temp::*} to {_step} split by "{@sectionCancel}"
+					set {screen.%player's uuid%.createNew::step} to {_temp::2}
+					set {_step} to {screen.%player's uuid%.createNew::step}
+					
+			else if {_step} contains "nameOfScreen":
+				if message is "oui":
+					set {_temp::*} to {screen.%player's uuid%.createNew::step} split by ":"
+					set {screen.%player's uuid%.createNew::data::name} to {_temp::2}
+					
+					create file "{@path}%{_temp::2}%.txt"
+					message "{@charRepConsole}&8Nom enregistré !"
+					wait 1 second
+					write "%{_temp::2}%" at line 1 to file "{@path}%{screen.%player's uuid%.createNew::data::name}%.txt"
+					set {screen.%player's uuid%.createNew::step} to "waitingToDoSomething"
+					message ""
+					message "{@charRepConsole}&8Que voulez-vous faire ?"
+					message "&8- créer un texte : &anew text"
+					message "&8- modifier un texte : &aedit text <id du texte>"
+					message "&8- créer un bouton : &anew button"
+					message "&8- modifier un texte : &aedit button <id du bouton>"
+					message "&8- voir la liste des textes : &alist text"
+					message "&8- voir la liste des boutons : &alist button"
+					message "&8- obtenir de l'aide : &ahelp"
+					message ""
+					stop
+					
+				else if message is "non":
+					message "{@charRepConsole}&8Quel sera le nom de votre nouveau screen ?"
+					set {screen.%player's uuid%.createNew::step} to "name"
+					stop
+			else if {_step} contains "newText":
+				set {_temp::*} to {_step} split by "{@section}"
+				set {_newText} to {_temp::2}
+				set {_idNewText} to {_temp::3}
+				if message is "oui":
+					# message "oké bh jmen fous j'enregistre pas ._."
+					message "{@charRepConsole}&8Texte enregistré : &r%{_newText}%"
+					message ""
+					
+					set {_toAddInStep} to "%{_newText}%{@section}%{_idNewText}%{@section}2.2{@section}1{@charFin}"
+					# message "%{_toAddInStep}%"
+					
+					set {_locCurseur::*} to {screen.%player's uuid%.curseur} split by "||"
+					# broadcast "locCurseur::* : %{_locCurseur::*}%"
+					set {_loc} to location at x-pos of player + {_locCurseur::1} parsed as number , y-pos of player + {_locCurseur::2} parsed as number, z-pos of player +2.2 in player's world
+					# broadcast "loc : %{_loc}%"
+					spawn 1 armor stand at {_loc}
+					set {_nbt} to "{{@dataTextEDITOR}"
+					replace all "PLAYER" with "%player%" in {_nbt}
+					replace all "IDNEWTEXT" with {_idNewText} in {_nbt}
+					set {_nbt} to "%{_nbt}%,CustomName:""%colored {_newText}%""}"
+					add "%{_nbt}%" to nbt of last spawned entity
+					
+					message "{@charRepConsole}&8Pour déplacer le texte à l'écran, bougez simplement votre souris"
+					message "&8Pour en modifier la taille, utilisez la molette de votre souris, vers le haut ou le bas"
+					message "&8Pour en modifier l'opacité, tapez &a+<nombre>&8 ou &a-<nombre>&8 dans le chat"
+					message "&8Une fois que le texte est bien placé, tapez &aok&8 dans le chat"
+					
+					set {screen.%player's uuid%.createNew::step} to "settingPositionOfNewText{@section}%{_toAddInStep}%"
+					# à ce moment, step = settingPositionOfNewText/text/id/Z/opacité{@charFin} 
+					
+				else if message is "non":
+					message "&8Quel sera le texte affiché ?"
+					set {screen.%player's uuid%.createNew::step} to "waitingNewText{@section}%{_idNewText}%"
+					stop
+				
+			else if {_step} contains "confirm_newButton":
+				set {_temp::*} to {_step} split by "{@section}"
+				set {_effect} to {_temp::3}
+				set {_idNewButton} to {_temp::2}
+				
+				if message is "oui":
+					# set {_raw::*} to {_effect} split by " "
+					set {screen.%player's uuid%.createNew::step} to "settingPositionOfNewButton1{@section}%{_idNewButton}%{@section}%{_effect}%"
+					message "{@charRepConsole}&8Effet enregistré : &a%{_effect}%"
+					message "&8Veuillez définir la zone du bouton (rectangulaire)"
+					message "&aPremier clic gauche&8 : Créer le premier sommet du rectangle"
+					message "&aDeuxième clic gauche&8 : Créer le deuxième sommet du rectangle"
+					message "&8Des particules vous aideront à visualiser le rectangle après le premier clic."
+					
+					stop
+					
+					
+					
+				else if message is "non":
+					message "&8Quel sera l'effet de ce bouton ?"
+					message "&8Effets disponibles : &aload <nom de screen>&8, &aquit"
+					set {screen.%player's uuid%.createNew::step} to "waitingNewButton{@section}%{_idNewButton}%"
+					stop
+					
+
+			else if {_step} contains "confirm_newPosButton":
+				set {_temp::*} to {_step} split by "{@section}"
+				set {_effect} to {_temp::3}
+				set {_idNewButton} to {_temp::2}
+				
+				if message is "oui":
+					# set {_raw::*} to {_effect} split by " "
+					message "{@charRepConsole}&aBouton enregistré !"
+					
+					set {_pos1::*} to {screen.%player's uuid%.createNew::newButton::firstPos} split by "||"
+					set {_pos2::*} to {screen.%player's uuid%.createNew::newButton::secondPos} split by "||"
+					
+					if {_pos1::1} parsed as number > {_pos2::1} parsed as number:
+						set {_xmin} to {_pos2::1}
+						set {_xmax} to {_pos1::1}
+					else:
+						set {_xmin} to {_pos1::1}
+						set {_xmax} to {_pos2::1}
+						
+					if {_pos1::2} parsed as number > {_pos2::2} parsed as number:
+						set {_ymin} to {_pos2::2}
+						set {_ymax} to {_pos1::2}
+					else:
+						set {_ymin} to {_pos1::2}
+						set {_ymax} to {_pos2::2}
+					
+					set {_newLine} to "button||%{_idNewButton}%||LEFT||%{_xmin}%||%{_ymin}%||%{_xmax}%||%{_ymax}%||screenEffect||%{_effect}%"
+					broadcast {_newLine}
+				
+					write {_newLine} at line (line count of file "{@path}%{screen.%player's uuid%.createNew::data::name}%.txt" + 1) to file "{@path}%{screen.%player's uuid%.createNew::data::name}%.txt"
+					
+					add {_newLine} to {screen.%player's uuid%.createNew::buttons::*}
+				
+					
+					stopEffect "%player's uuid%_y_ptFixe" 
+					stopEffect "%player's uuid%_x_ptFixe"
+					stopEffect "%player's uuid%_y_curseur"
+					stopEffect "%player's uuid%_x_curseur"
+					
+					kill {screen.%player's uuid%.createNew::newButton::y}
+					kill {screen.%player's uuid%.createNew::newButton::x}
+					kill {screen.%player's uuid%.createNew::newButton::ptFixe}
+					kill {screen.%player's uuid%.createNew::newButton::curseur}
+					
+					delete {screen.%player's uuid%.createNew::newButton::*}
+					set {screen.%player's uuid%.createNew::step} to "waitingToDoSomething"
+					stop
+					
+					
+					
+				else if message is "non":
+					message "&8Veuillez re définir la zone du bouton (rectangulaire)"
+					message "&aPremier clic gauche&8 : Créer le premier sommet du rectangle"
+					message "&aDeuxième clic gauche&8 : Créer le deuxième sommet du rectangle"
+					message "&8Des particules vous aideront à visualiser le rectangle après le premier clic."
+					set {screen.%player's uuid%.createNew::step} to "settingPositionOfNewButton1{@section}%{_idNewButton}%{@section}%{_effect}%"
+					stopEffect "%player's uuid%_y_ptFixe" 
+					stopEffect "%player's uuid%_x_ptFixe"
+					stopEffect "%player's uuid%_y_curseur"
+					stopEffect "%player's uuid%_x_curseur"
+					
+					kill {screen.%player's uuid%.createNew::newButton::y}
+					kill {screen.%player's uuid%.createNew::newButton::x}
+					kill {screen.%player's uuid%.createNew::newButton::ptFixe}
+					kill {screen.%player's uuid%.createNew::newButton::curseur}
+					
+					delete {screen.%player's uuid%.createNew::newButton::*}
+					stop
+				
+				
+		if {_step} is "name":
+			replace all " " with "_" in message
+			if checkChar(message) is 0:
+				message "{@charRepConsole}&cLe nom de votre screen ne doit comporter que des lettres maj ou min, ou des chiffres (a-z A-Z 0-9)"
+				stop
+			if file "{@path}%message%.txt" exists:
+				message "{@charRepConsole}&cCe nom de screen est déjà utilisé : &6%message%"
+				stop
+			message "{@charRepConsole}&8le nouveau screen aura pour nom &6%message%&8 ? (oui/non)"
+			set {screen.%player's uuid%.createNew::step} to "confirm_nameOfScreen:%message%"
+		
+		else if {_step} is "waitingIDforText":
+			replace all " " with "_" in message
+			if checkChar(message) is 0:
+				message "{@charRepConsole}&cL'ID du nouveau texte ne doit comporter que des lettres maj ou min, ou des chiffres (a-z A-Z 0-9)"
+				stop
+			message "{@charRepConsole}&8Le nouveau texte aura pour ID &6%message%&8 !"
+			message "&8Quel sera le texte affiché ?"
+			set {screen.%player's uuid%.createNew::step} to "waitingNewText{@section}%message%" # message = ID
+			stop
+			
+		else if {_step} is "waitingIDforButton":
+			replace all " " with "_" in message
+			if checkChar(message) is 0:
+				message "{@charRepConsole}&cL'ID du nouveau bouton ne doit comporter que des lettres maj ou min, ou des chiffres (a-z A-Z 0-9)"
+				stop
+			message "{@charRepConsole}&8Le nouveau bouton aura pour ID &6%message%&8 !"
+			message "&8Quel sera l'effet de ce bouton ?"
+			message "&8Effets disponibles : &aload <nom de screen>&8, &aquit"
+			set {screen.%player's uuid%.createNew::step} to "waitingNewButton{@section}%message%" # waiting../ID
+			stop
+		
+		else if {_step} contains "waitingNewText":
+			message "{@charRepConsole}&8le nouveau texte sera :%nl%&r%colored message%%nl%&8? (oui/non)"
+			set {_temp::*} to {_step} split by "{@section}" # temp::2 = id du texte
+			set {screen.%player's uuid%.createNew::step} to "confirm_newText{@section}%message%{@section}%{_temp::2}%"
+		
+		
+		else if {_step} contains "waitingNewButton":
+			set {_temp::*} to {_step} split by "{@section}"
+			set {_idNewButton} to {_temp::2}
+			set {_raw::*} to message split by " "
+			
+			if {_raw::1} is not "load" or "quit" or "lsc" or "qsc":
+				message "{@charRepConsole}&cEffets disponibles : &aload <nom de screen>&c, &aquit"
+				stop
+			
+			if {_raw::1} is "load" or "lsc":
+				if {_raw::2} is not set:
+					message "{@charRepConsole}&cVeuillez précisez le nom du screen à charger via ce bouton"
+					stop
+				set {_effetFinal} to message
+			
+			if {_raw::1} is "quit" or "qsc":
+				if {_raw::2} is set:
+					message "{@charRepConsole}&cL'effet quit n'admet pas de 2nd argument, il sera donc ignoré"
+				set {_effetFinal} to {_raw::1}
+				
+			message "{@charRepConsole}&8l'effet du bouton sera :%nl%&a%{_effetFinal}%%nl%&8? (oui/non)"
+			set {screen.%player's uuid%.createNew::step} to "confirm_newButton{@section}%{_idNewButton}%{@section}%{_effetFinal}%" # confirm../id/effet
+		
+		
+		else if {_step} is "waitingToDoSomething":
+			set {_raw::*} to message split by " "
+			if {_raw::1} is not "new" or "edit" or "help" or "aide" or "?" or "list" or "finish" or "save":
+				message "{@charRepConsole}&8Commande inconnue : %message%"
+				message "&8Obtenir de l'aide : &ahelp"
+				stop
+				
+			if {_raw::1} is "help" or "aide" or "?":
+				message "{@charRepConsole}&8AIDE :"
+				message "&8- créer un texte : &anew text"
+				message "&8- modifier un texte : &aedit text <id du texte>"
+				message "&8- créer un bouton : &anew button"
+				message "&8- modifier un bouton : &aedit button <id du bouton>"
+				message "&8- voir la liste des textes : &alist text"
+				message "&8- voir la liste des boutons : &alist button"
+				message "&8- obtenir de l'aide : &ahelp"
+				message ""
+				message "&8&oPour faire une action, écrivez dans le chat l'action en vert"
+				message "&8&oL'id du texte/du bouton est défini au moment de sa création"
+				message ""
+				stop
+				
+			if {_raw::1} is "new":
+				if {_raw::2} is "text":
+					message "{@charRepConsole}&8Création d'un nouveau texte"
+					message "&8Quel sera l'id de ce texte ? (a-z A-Z 0-9)"
+					set {screen.%player's uuid%.createNew::step} to "waitingIDforText"
+					stop
+					
+				if {_raw::2} is "button":
+					message "{@charRepConsole}&8Création d'un nouveau bouton"
+					message "&8Quel sera l'id de ce bouton ? (a-z A-Z 0-9)"
+					set {screen.%player's uuid%.createNew::step} to "waitingIDforButton"
+					stop
+					
+					
+			if {_raw::1} is "finish" or "save":
+				message "{@charRepConsole}&8Enregistrement du screen"
+				message "&8Chargement de l'écran d'accueil"
+				set {screen.%player's uuid%.createNew::step} to "finished"
+				
+		else if {_step} contains "settingPositionOfNewText":
+			if message contains "+" or "-":
+				if message does not contain "0" or "1" or "2" or "3" or "4" or "5" or "6" or "7" or "8" or "9":
+					message "{@charRepConsole}&c Veuillez indiquer la quantité d'opacité à ajouter"
+					stop
+				set {_qte} to message
+				replace all "+" and "-" and " " with "" in {_qte}
+				if {_qte} parsed as integer does not exist:
+					message "{@charRepConsole}&c Veuillez indiquer la quantité d'opacité à ajouter (nombre &nentier&c)"
+					stop
+				if message contains "+":
+					if {_qte} parsed as number is greater than 5:
+						set {_qte} to "5"
+						message "{@charRepConsole}&8L'ajout maximum d'opacité d'un coup est 5"
+					set {_raw::*} to {_step} split by "{@section}"
+					replace all "{@charFin}" with "" in {_raw::5}
+					message "{@charRepConsole}&8Ajout d'opacité : &a+%{_qte}% %nl%&8Total : &a%{_qte} parsed as number + {_raw::5} parsed as number%"
+					loop all entities in radius {@radiusX} , {@radiusY} , {@radiusZ} around player:
+						# message "%loop-entity's name%"
+						loop-entity is armor stand
+						"%name of loop-entity%" is "%colored {_raw::2}%"
+						set {_nbt} to "%nbt of loop-entity%"
+						loop {_qte} parsed as number times:
+							spawn 1 armor stand at location of loop-entity
+							add {_nbt} to nbt of last spawned entity
+						exit loop
+					replace all "{@section}%{_raw::5}%{@charFin}" with "{@section}%{_raw::5} parsed as number + {_qte} parsed as number%{@charFin}" in {screen.%player's uuid%.createNew::step}
+					# broadcast {screen.%player's uuid%.createNew::step}
+					
+				else if message contains "-":
+					set {_raw::*} to {_step} split by "{@section}"
+					replace all "{@charFin}" with "" in {_raw::5}
+					if {_raw::5} is "1":
+						message "{@charRepConsole}&8L'opacité est déjà au minimum"
+					else if {_raw::5} parsed as number <= {_qte} parsed as number: #>
+						message "{@charRepConsole}&8L'opacité est maintenant au minimum"
+						set {_aTuer} to {_raw::5} parsed as number -1
+						loop all entities in radius {@radiusX} , {@radiusY} , {@radiusZ} around player:
+							# message "%loop-entity's name%"
+							loop-entity is armor stand
+							"%name of loop-entity%" is "%colored {_raw::2}%"
+							delete loop-entity
+							remove 1 from {_aTuer}
+							{_aTuer} = 0
+							exit loop
+						replace all "{@section}%{_raw::5}%{@charFin}" with "{@section}1{@charFin}" in {screen.%player's uuid%.createNew::step}
+						# broadcast {screen.%player's uuid%.createNew::step}
+						
+					else:
+						message "{@charRepConsole}&8Retrait d'opacité : &a-%{_qte}% %nl%&8Total : &a%0 - {_qte} parsed as number + {_raw::5} parsed as number%"
+						set {_aTuer} to {_qte} parsed as number
+						loop all entities in radius {@radiusX} , {@radiusY} , {@radiusZ} around player:
+							# message "%loop-entity's name%"
+							loop-entity is armor stand
+							"%name of loop-entity%" is "%colored {_raw::2}%"
+							delete loop-entity
+							remove 1 from {_aTuer}
+							{_aTuer} = 0
+							exit loop
+						replace all "{@section}%{_raw::5}%{@charFin}" with "{@section}%{_raw::5} parsed as number - {_qte} parsed as number%{@charFin}" in {screen.%player's uuid%.createNew::step}
+						# broadcast {screen.%player's uuid%.createNew::step}
+				
+			else if message is "ok":
+				# message "Non balek ta pa finit"
+				set {_raw::*} to {_step} split by "{@section}"
+				replace all "{@charFin}" with "" in {_raw::5}
+				# broadcast "%{_raw::*}%"
+				set {_pos::*} to {screen.%player's uuid%.curseur} split by "||"
+				set {_newLine} to "text||%{_raw::3}%||%{_pos::1}%/%{_pos::2}%/%{_raw::4}%||%{_raw::2}%||%{_raw::5}%"
+				# broadcast {_newLine}
+				
+				write {_newLine} at line (line count of file "{@path}%{screen.%player's uuid%.createNew::data::name}%.txt" + 1) to file "{@path}%{screen.%player's uuid%.createNew::data::name}%.txt"
+				
+				add {_newLine} to {screen.%player's uuid%.createNew::texts::*}
+				
+				message "{@charRepConsole}&8Texte enregistré !"
+				set {screen.%player's uuid%.createNew::step} to "waitingToDoSomething"
+					
+		
+		if {screen.%player's uuid%.createNew::step} is "finished":
+			message "&8Création terminée, votre nouveau screen se trouve dans {@path} et se nomme %{screen.%player's uuid%.createNew::data::name}%.txt"
+			delete {screen.%player's uuid%.createNew::*}
+			unloadScreen(player)
+			loadScreen(player , "accueil")
+			
+		stop
+		
+# FIN CREATION DE SCREEN IG
+
+# - - - COMMANDES DE SCREEN
+
+	if containsP({screen.playersOnScreen::*} , player) is true:
+		if first character of message is ".":
+			set message to last (length of message -1) characters of message
+			stop
+		cancel event
+		message "{@logo} &0[&8Commande&0] &8-> &7%message%"
+		if ((first 5 characters of message == "load ") or (first 4 characters of message == "lsc ")):
+			set {_split::*} to message split by " "
+			message "{@charRepConsole}&8Chargement du screen :"
+			message " &8> &6&o%{_split::2}%"
+			unloadScreen(player)
+			loadScreen(player, {_split::2})
+		else if ((first 6 characters of message == "reload") or (first 3 characters of message == "rsc")):
+			message "{@charRepConsole}&8Reload du screen"
+			set {_uuid} to uuid of player
+			set {_name} to {screen.%{_uuid}%.activeScreen::name} 
+			unloadScreen(player)
+			loadScreen(player , {_name})
+		else if ((first 4 characters of message == "quit") or (first 3 characters of message == "qsc") or (first 5 characters of message == "leave")):
+			message "{@charRepConsole}&8Au revoir %player%!"
+			make player execute command "/qsc"
+		else if message is "create" or "new" or "new screen":
+			if player has permission "{@permission}":
+				unloadScreen(player)
+				message "{@charRepConsole}&8Création d'un nouveau screen"
+				set {screen.%player's uuid%.createNew::step} to "name"
+				message "{@charRepConsole}&8Quel sera le nom de votre nouveau screen ?"
+			
+			else:
+				message "{@charRepConsole}&cVous n'avez pas la permission de faire ça"
+			
+# FIN COOMMANDES
+
+			
+
+command /modif <number>:	
+	trigger:
+		set {_raw::*} to {screen.%player's uuid%.createNew::step} split by "{@section}"
+		# set {_raw::4} to "%{_raw::4} parsed as number + arg-1%"
+		replace all "{@section}%{_raw::4}%{@section}" with "{@section}%{_raw::4} parsed as number + arg-1%{@section}" in {screen.%player's uuid%.createNew::step}
+		# set {screen.%player's uuid%.createNew::step} to "%{_raw::1}%{@section}%{_raw::2}%{@section}%{_raw::3}%{@section}%{_raw::4}%{@section}%{_raw::5}%"
+		
+			
+on hotbar switch:
+	{screen.%player's uuid%.createNew::step} contains "settingPositionOfNewText"
+	set {_PLUSGRAND} to false # grosse optimisation ce bout de code :0
+	if new hotbar slot is 8:
+		if previous hotbar slot is 0:
+			set {_PLUSGRAND} to true
+		else:
+			set {_PLUSGRAND} to false
+			
+	else if new hotbar slot is 0:
+		if previous hotbar slot is 8:
+			set {_PLUSGRAND} to false
+		else:
+			set {_PLUSGRAND} to true
+	
+	else if (new hotbar slot) < (previous hotbar slot):
+		set {_PLUSGRAND} to true
+		
+	else if (new hotbar slot) > (previous hotbar slot):
+		set {_PLUSGRAND} to false
+		
+
+	if {_PLUSGRAND} is true:
+		# message "scroll vers le haut"
+		set {_raw::*} to {screen.%player's uuid%.createNew::step} split by "{@section}"
+		set {_temp} to "%{_raw::4} parsed as number - {@sensibiliteMolette}%"
+		if {_temp} parsed as number >= 0.48:
+			# replace all "{@section}%{_raw::4}%{@section}" with "{@section}%{_raw::4} parsed as number - {@sensibiliteMolette}%{@section}" in {screen.%player's uuid%.createNew::step}
+			set {screen.%player's uuid%.createNew::step} to "%{_raw::1}%{@section}%{_raw::2}%{@section}%{_raw::3}%{@section}%{_temp}%{@section}%{_raw::5}%{@charFin}"
+			
+		else:
+			# replace all "{@section}%{_raw::4}%{@section}" with "{@section}0.48{@section}" in {screen.%player's uuid%.createNew::step}
+			set {screen.%player's uuid%.createNew::step} to "%{_raw::1}%{@section}%{_raw::2}%{@section}%{_raw::3}%{@section}0.48{@section}%{_raw::5}%{@charFin}"
+			
+	else:
+		# message "scroll vers le bas"
+		set {_raw::*} to {screen.%player's uuid%.createNew::step} split by "{@section}"
+		set {_temp} to "%{_raw::4} parsed as number + {@sensibiliteMolette}%"
+		if {_temp} parsed as number <= 2.2: #>
+			# set {screen.%player's uuid%.createNew::step} to "%{_raw::1}%{@section}%{_raw::2}%{@section}%{_raw::3}%{@section}%{_raw::4}%"
+			# replace all "{@section}%{_raw::4}%{@section}" with "{@section}%{_raw::4} parsed as number + {@sensibiliteMolette}%{@section}" in {screen.%player's uuid%.createNew::step}
+			set {screen.%player's uuid%.createNew::step} to "%{_raw::1}%{@section}%{_raw::2}%{@section}%{_raw::3}%{@section}%{_temp}%{@section}%{_raw::5}%{@charFin}"
+		else:
+			# set {screen.%player's uuid%.createNew::step} to "%{_raw::1}%{@section}%{_raw::2}%{@section}%{_raw::3}%{@section}2.2"
+			# replace all "{@section}%{_raw::4}%{@section}" with "{@section}2.2{@section}" in {screen.%player's uuid%.createNew::step}
+			set {screen.%player's uuid%.createNew::step} to "%{_raw::1}%{@section}%{_raw::2}%{@section}%{_raw::3}%{@section}2.2{@section}%{_raw::5}%{@charFin}"
+	
