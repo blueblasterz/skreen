@@ -1,0 +1,25 @@
+Accueil
+
+fond||all||7
+fond||load||fondSK
+fond||1||--/--/--/--/--/--/--/14/14
+
+
+
+text||title||0/-0.36/0.42||&5Accueil||10
+
+
+text||question||0/0.35/1.8||&6%player%&a, que voulez-vous faire ?||5
+
+text||retourPremEcran||-1.8/-2.25/1.2||&4Retour||5
+
+
+#text||backEdit||2/-0.5/1.5||   &eEditer le   ||5
+#text||backEdit||2/-0.725/1.5||&efond d'écran||5
+
+button||backEdit||LEFT||1.61||-0.45||3.68||0.09||screenEffect||load backEdit
+
+
+#button||retourPremEcran||LEFT||-3.68||-3.05||-2.3||-2.79||screenEffect||load mainScreen
+
+button||retourPremEcran||LEFT||-3.68||-3.05||-2.3||-2.79||effect||make player say "lsc mainScreen"[|]give 1 diamond to player

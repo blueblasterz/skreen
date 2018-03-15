@@ -1,0 +1,14 @@
+Chargement
+
+fond||load||fond1
+fond||2||--/--/--/--/--/--/--/--/01
+fond||1||--/--/--/--/--/--/--/14/14
+
+
+text||title||0/-0.36/0.42||&5Bienvenue !||10
+text||question||0/0/1.2||&aComment allez vous, &2%player%&a ?||5
+text||link||0/-0.5/2.2||&4> &6Cliquez ici pour lancer le chargement de l'écran d'accueil &4<||5
+button||loadEcranAccueil||LEFT||-3.33||-0.3||3.33||-0.12||screenEffect||load accueil
+text||quitter||-1.8/-2.25/1.2||&4Quitter||5
+button||quitter||LEFT||-3.68||-3.05||-2.3||-2.79||effect||make player say "qsc"
+
